@@ -38,7 +38,7 @@ jobs:
         run: |
           ZIP="build/Hubless-${TAG#v}.zip"
           shasum -a 256 "$ZIP" | tee "$ZIP.sha256"
-          NOTES=$(cat <<EOF
+          cat > notes.md <<EOF
           ## Download
           **[Hubless-${TAG#v}.zip](https://github.com/${{ github.repository }}/releases/download/$TAG/Hubless-${TAG#v}.zip)**: universal (Apple Silicon + Intel), macOS 14 or later.
 
@@ -51,9 +51,8 @@ jobs:
 
           Quit Logitech G HUB first if it's installed, since both apps write to the same devices.
           EOF
-          )
           if gh release view "$TAG" >/dev/null 2>&1; then
             gh release upload "$TAG" "$ZIP" "$ZIP.sha256" --clobber
           else
-            gh release create "$TAG" "$ZIP" "$ZIP.sha256" --title "Hubless $TAG" --notes "$NOTES" --generate-notes
+            gh release create "$TAG" "$ZIP" "$ZIP.sha256" --title "Hubless $TAG" --notes-file notes.md --generate-notes
           fi
