@@ -37,7 +37,7 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           ZIP="build/Hubless-${TAG#v}.zip"
-          shasum -a 256 "$ZIP" | tee "$ZIP.sha256"
+          (cd build && shasum -a 256 "${ZIP#build/}" | tee "${ZIP#build/}.sha256")
           cat > notes.md <<EOF
           ## Download
           **[Hubless-${TAG#v}.zip](https://github.com/${{ github.repository }}/releases/download/$TAG/Hubless-${TAG#v}.zip)**: universal (Apple Silicon + Intel), macOS 14 or later.
