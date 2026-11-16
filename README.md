@@ -6,6 +6,18 @@ It manages your devices and keeps settings in local profiles.
 
 ![Home](docs/screenshots/home.png)
 
+## Download
+
+Get the latest **Hubless-x.y.z.zip** from [Releases](https://github.com/nicolasalbani/rea-logitech-ghub/releases/latest).
+It's a universal app (Apple Silicon + Intel) for macOS 14 or later. Unzip it and drag **Hubless.app** to Applications.
+
+The app is ad-hoc signed and not notarized, so macOS blocks it on first launch. Open it once, then go to
+**System Settings › Privacy & Security** and click **Open Anyway**. Or run:
+
+```bash
+xattr -dr com.apple.quarantine /Applications/Hubless.app
+```
+
 ## Supported devices
 
 | Device | What you can control |
@@ -30,9 +42,19 @@ webcams will generally work too.
 Requires macOS 14+ and the Xcode command-line tools.
 
 ```bash
-./scripts/build_app.sh          # -> build/Hubless.app (ad-hoc signed)
+./scripts/build_app.sh          # -> build/Hubless.app (universal, ad-hoc signed) + build/Hubless-<version>.zip
+ARCHS=arm64 ./scripts/build_app.sh   # faster single-architecture build
 open build/Hubless.app
 swift test                      # unit tests (protocol encoding, descriptor parsing, storage)
+```
+
+### Publishing a release
+
+Push a version tag and the [Release workflow](.github/workflows/release.yml) tests, builds and publishes
+the zip to GitHub Releases:
+
+```bash
+git tag v1.0.1 && git push origin v1.0.1
 ```
 
 ### Hardware verification modes

@@ -1,0 +1,59 @@
+name: Release
+
+# Push a tag like v1.0.1 to build the universal app and publish it as a GitHub release.
+on:
+  push:
+    tags: ["v*"]
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "Existing tag to (re)build and release, e.g. v1.0.0"
+        required: true
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: macos-15
+    env:
+      TAG: ${{ github.event.inputs.tag || github.ref_name }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.inputs.tag || github.ref }}
+
+      - name: Toolchain
+        run: swift --version
+
+      - name: Test
+        run: swift test
+
+      - name: Build universal app
+        run: VERSION="$TAG" BUILD_NUMBER="${{ github.run_number }}" ./scripts/build_app.sh
+
+      - name: Publish release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          ZIP="build/Hubless-${TAG#v}.zip"
+          shasum -a 256 "$ZIP" | tee "$ZIP.sha256"
+          NOTES=$(cat <<EOF
+          ## Download
+          **[Hubless-${TAG#v}.zip](https://github.com/${{ github.repository }}/releases/download/$TAG/Hubless-${TAG#v}.zip)**: universal (Apple Silicon + Intel), macOS 14 or later.
+
+          Unzip it and drag **Hubless.app** to Applications.
+
+          ### First launch
+          The app is not notarized by Apple, so macOS blocks it the first time. Either:
+          - open it once, then go to **System Settings › Privacy & Security** and click **Open Anyway**, or
+          - run \`xattr -dr com.apple.quarantine /Applications/Hubless.app\` in Terminal.
+
+          Quit Logitech G HUB first if it's installed, since both apps write to the same devices.
+          EOF
+          )
+          if gh release view "$TAG" >/dev/null 2>&1; then
+            gh release upload "$TAG" "$ZIP" "$ZIP.sha256" --clobber
+          else
+            gh release create "$TAG" "$ZIP" "$ZIP.sha256" --title "Hubless $TAG" --notes "$NOTES" --generate-notes
+          fi
